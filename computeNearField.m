@@ -10,11 +10,11 @@ gss = 3;      % number of Gauss points
 h = (2*pi)/N;
 t = (0:h:(2*pi-h))';
 vtx = [real(z(t)), imag(z(t)), zeros(N, 1)];
-elt  = [[(2:N)'; 1], (1:N)'];
+elt = [[(2:N)'; 1], (1:N)'];
 mesh = msh(vtx, elt);
 
 % Frequency adjusted to maximum esge size:
-stp  = mesh.stp;
+stp = mesh.stp;
 kmax = 1/stp(2);
 if (k > kmax)
     warning('Wave number is too high for mesh resolution.')
