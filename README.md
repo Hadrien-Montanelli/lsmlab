@@ -23,7 +23,7 @@ The package requires `gypsilab`: https://github.com/matthieuaussal/gypsilab.
 
 # Getting started
 
-Take a look at `test` &mdash; happy computing!
+Check out `lsm.m` &mdash; happy computing!
 
 # License
 See `LICENSE.txt` for licensing information.
