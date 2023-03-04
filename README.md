@@ -1,6 +1,6 @@
 # About
 MATLAB package for solving inverse acoustic problems with the LSM. The code is used in the following paper:
-- J. Garnier, H. Haddar, H. Montanelli, <i>The linear sampling method for random sources</i>, submitted to SIIMS
+- J. Garnier, H. Haddar, H. Montanelli, <i>The linear sampling method for random sources</i>, SIIMS (2023)
 
 # Installation
 
