@@ -4,31 +4,32 @@ setup
 % Parameters:
 k = 2*pi;                      % wavenumber
 lambda = 2*pi/k;               % wavelength
-eta = 0;                       % noise level
+eta = 5e-2;                    % noise level
 nx = 100;                      % number of points in x-dir
 ny = nx;                       % number of points un y-dir
 scl = 5;                       % distance of sources & measurements
 sclxcor = 50;                  % distance of random sources
 betamax = 0.1;                 % distribution of ramdom sources
-xmin = -floor((scl+1)*lambda); % domain is [xmin, xmax] x [ymin, ymax]
-xmax = floor((scl+1)*lambda);  % domain is [xmin, xmax] x [ymin, ymax]
+xmin = -(scl+1)*lambda;        % domain is [xmin, xmax] x [ymin, ymax]
+xmax = (scl+1)*lambda;         % domain is [xmin, xmax] x [ymin, ymax]
 ymin = xmin;                   % domain is [xmin, xmax] x [ymin, ymax]
 ymax = xmax;                   % domain is [xmin, xmax] x [ymin, ymax]
-L = 80;                        % number of random sources
+L = 80;                        % number of positions of random sources Z
 J = L;                         % number of measurement points X
 M = L;                         % number of point sources Y
 imaginary = 'n';               % 'y', 'n'
-xcor = 'n';                    % 'y', 'n'
+xcor = 'y';                    % 'y', 'n'
 xcorsetup = 'A';               % 'A', 'B'
-obstacle = 'circ';             % 'circ', 'elli', 'kite'
+obstacle = 'kite';             % 'circ', 'elli', 'kite'
 aperture = 'full';             % 'full', 'limi'
+style = 'paper';               % 'slide', 'paper'
 
 % Obstacle:
 s = lambda/2;
 if strcmp(obstacle, 'circ') % circle
     x = @(t) cos(t);
     y = @(t) sin(t);
-    c = 0;
+    c = -2*lambda + 2*lambda*1i;
 elseif strcmp(obstacle, 'elli') % ellipse
     x = @(t) 1.5*cos(t);
     y = @(t) sin(t);
@@ -46,7 +47,7 @@ x = @(t) s*x(t) + real(c);
 y = @(t) s*y(t) + imag(c);
 z = @(t) x(t) + 1i*y(t);
 
-% Point sources:
+% Point sources Y:
 if strcmp(xcor, 'y')
     Ry = sclxcor*lambda;
 else
@@ -64,7 +65,7 @@ if strcmp(aperture, 'limi') && ~strcmp(xcor, 'y')
 end
 Y = Ry*[cos(theta), sin(theta), zeros(size(theta))];
 
-% Measurement points:
+% Measurement points X:
 Rx = scl*lambda;
 if strcmp(aperture, 'full')
     h = 2*pi/J;
@@ -81,7 +82,7 @@ N = zeros(J, M);
 phi = @(X, Y) 1i/4*besselh(0, k*vecnorm(X - Y, 2, 2));
 for m = 1:M
     ui = @(X) phi(X, Y(m, :));
-    N(:, m) = computeNearField(z, k, X, ui);
+    N(:, m) = nearFieldRandSource(z, k, X, ui);
 end
 toc
 
@@ -115,7 +116,8 @@ elseif strcmp(xcor, 'y') % setup with cross-correlation matrix C
     psi = @(X, Y) 1i/2*besselj(0, k*vecnorm(X - Y, 2, 2));
     for m = 1:M
         if strcmp(xcorsetup, 'A')
-            Ceta(:, m) = (2*pi*Ry/L)*(2i*k)*Neta(m, :)*Neta';
+            Sigma = 2*pi*Ry;
+            Ceta(:, m) = (Sigma/L)*(2i*k)*Neta(m, :)*Neta';
         elseif strcmp(xcorsetup, 'B')
             Ceta(:, m) = (1/M)*(2i*k)*Neta(m, :)*Neta';
         end
@@ -159,9 +161,9 @@ toc
 
 % Plot matrix:
 if strcmp(imaginary, 'y') || strcmp(xcor, 'y')
-    surf(imag(Aeta)), view(0, -90), shading interp
+    surf(imag(Aeta)), view(0, 90), shading interp
 else
-    surf(abs(Aeta)), view(0, -90), shading interp
+    surf(abs(Aeta)), view(0, 90), shading interp
 end
 axis equal, axis([1, M, 1, J])
 if strcmp(xcorsetup, 'B')
@@ -169,7 +171,19 @@ if strcmp(xcorsetup, 'B')
 else
     xticks([1 20 40 60 80]), yticks([1 20 40 60 80])
 end
-xticks(''), yticks('')
+if strcmp(style, 'paper')
+    if strcmp(imaginary, 'y')
+        title('$\mathrm{Im}(I_\delta)$', 'interpreter', 'Latex')
+    elseif strcmp(xcor, 'y')
+        title('$\mathrm{Im}(C_\delta)$', 'interpreter', 'Latex')
+    else
+        title('$\vert N_\delta\vert$', 'interpreter', 'Latex')
+    end
+end
+if strcmp(style, 'slide')
+    xticks(''), yticks('')  
+end
+set(gcf, 'Position', [100 100 800 800])
 shg, print(gcf, 'images/matrix.eps', '-depsc', '-r280')
 
 % Plot indicator function:
@@ -178,8 +192,18 @@ if strcmp(aperture, 'full')
 end
 figure, surf(xx, yy, I), view(2), shading interp
 axis equal, axis([xmin, xmax, ymin, ymax])
+if strcmp(style, 'paper')
+    colorbar
+    if strcmp(xcor, 'y') && strcmp(xcorsetup, 'B')
+        clim([0.5, 3])
+    else
+        clim([0, 0.7])
+    end
+else
+    clim([0, 0.7])
+end
 t = linspace(0, 2*pi, 100);
-hold on, plot3(x(t), y(t), 1e1 + max(I(:))*ones(size(y(t))), '-k', LW, 1)
+hold on, plot3(x(t), y(t), 1e1 + max(I(:))*ones(size(y(t))), '-k', LW, 2)
 hold on, plot3(Y(2:2:end,1), Y(2:2:end,2), 1e1 + ones(size(Y(2:2:end,1))), '.w', MS, 30)
 if strcmp(xcor, 'y') && strcmp(xcorsetup, 'B')
     hold on
@@ -191,5 +215,11 @@ else
     hold on
     plot3(X(1:2:end,1), X(1:2:end,2), 1e1 + ones(size(X(1:2:end,1))), 'xw', MS, 12)
 end
-xticks(''), yticks('')
+if strcmp(style, 'paper')
+    title('$\Vert g_z\Vert_2^{-1}$', 'interpreter', 'Latex')
+end
+if strcmp(style, 'slide')
+    xticks(''), yticks('')  
+end
+set(gcf, 'Position', [100 100 800 800])
 shg, print(gcf, 'images/lsm.eps', '-depsc', '-r280')
