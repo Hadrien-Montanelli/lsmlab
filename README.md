@@ -24,7 +24,7 @@ The package requires `gypsilab`: https://github.com/matthieuaussal/gypsilab.
 
 # Getting started
 
-Check out `lsm.m` &mdash; happy computing!
+Check out `lsmRandSource.m` and `lsmRandScatterer.m` &mdash; happy computing!
 
 # License
 See `LICENSE.txt` for licensing information.
